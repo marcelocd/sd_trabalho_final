@@ -128,7 +128,6 @@ end
 def scan_classes_table
 	page = Nokogiri::HTML(@page, nil, Encoding::UTF_8.to_s)
 	
-
 	page.css('.descricao').each do |td|
 		puts class_id = td.to_s.match(/value=\"(\d+)/)[1]
 		puts j_id = td.to_s.match(/(j_id\d+)/)[1]
@@ -142,8 +141,25 @@ def scan_classes_table
 			"#{class_url()}"
 		]
 
-		save_page
 		byebug
+
+		param_name1 = @page.match(/\(\'(formMenu:j_id_jsp_\d+_\d+)/)[1].gsub(/:/, '%3A')
+		
+		param1 = @page.match(/\{'(formMenu:j_id_jsp_\d+_\d+)\':\'formMenu:j_id_jsp_\d+_\d+\'\},\'\'\)\;\}return false\">\n\t\t\t\t\t<div class=\"itemMenu\">Participantes/)[1].gsub(/:/, '%3A')
+		view_state = @page.match(/javax\.faces\.ViewState\" value=\"(j_id_\d+)/)[1]
+
+		param2 = @page.match(//)[1]
+
+		form_data = "formMenu=formMenu&#{param_name1}=#{param1}&javax.faces.ViewState=#{view_state}&#{param2}=#{param2}"
+
+=begin
+		@page = %x[
+			curl -c #{cookies_path()} -b #{cookies_path()} \
+			-k --ciphers 'DEFAULT:!DH' \
+			-d "#{form_data}" \
+			"#{participants_url()}"
+		]
+=end
 	end
 end
 
@@ -233,6 +249,10 @@ end
 
 def class_url
 	return base_url() + 'portais/discente/discente.jsf'
+end
+
+def participants_url
+	return 'https://sigaa.sistemas.ufg.br/sigaa/ava/index.jsf'
 end
 
 # --------------------------------------------
