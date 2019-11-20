@@ -2,13 +2,15 @@
 # Universidade Federal de Goiás    *
 # Instituto de Informática         *
 # Creation date:   11/14/19        *
-# Last updated on: 11/15/19        *
+# Last updated on: 11/19/19        *
 # Author: Marcelo Cardoso Dias     *
 # -------------------------------- */
 
 # sigaa_crawler.rb
 
 # REQUIREMENTS -------------------------------
+require "mechanize"
+require "nokogiri"
 require "byebug"
 require "erb"
 
@@ -16,7 +18,7 @@ require "erb"
 
 # PROBLEM SOLVING FUNCTIONS ------------------
 def login username, password
-	page = %x[\
+	@page = %x[\
 		curl -c #{cookies_path()} \
 		-b #{cookies_path()} \
 		-k --ciphers 'DEFAULT:!DH' \
@@ -25,9 +27,9 @@ def login username, password
 
 	jsessionid = File.read("#{cookies_path()}").gsub(/[\s]/, ' ').match(/JSESSIONID ([^ ]+)/)[1]
 
-	lt = page.match(/name=\"lt\" value=\"([^\"]+)/)[1]
+	lt = @page.match(/name=\"lt\" value=\"([^\"]+)/)[1]
 
-	execution = page.match(/name=\"execution\" value=\"([^\"]+)/)[1]
+	execution = @page.match(/name=\"execution\" value=\"([^\"]+)/)[1]
 
 	encoded_username = ERB::Util.url_encode(username)
 
@@ -35,7 +37,7 @@ def login username, password
 
 	form_data = "username=#{encoded_username}&password=#{encoded_password}&lt=#{lt}&execution=#{execution}&_eventId=submit"
 
-	page = %x[
+	@page = %x[
 		curl -v -c #{cookies_path()} -b #{cookies_path()} \
 		-k --ciphers 'DEFAULT:!DH' \
 		-d "#{form_data}" \
@@ -43,9 +45,9 @@ def login username, password
 		2>&1
 	]
 
-	ticket = page.match(/ticket=([^\r]+)/)[1]
+	ticket = @page.match(/ticket=([^\r]+)/)[1]
 
-	page = %x[\
+	@page = %x[\
 		curl -c #{cookies_path()} \
 		-b #{cookies_path()} \
 		-k --ciphers 'DEFAULT:!DH' \
@@ -54,28 +56,28 @@ def login username, password
 
 	jsessionid = File.read("#{cookies_path()}").gsub(/[\s]/, ' ').match(/JSESSIONID ([^ ]+) $/)[1]
 
-	page = %x[\
+	@page = %x[\
 		curl -c #{cookies_path()} \
 		-b #{cookies_path()} \
 		-k --ciphers 'DEFAULT:!DH' \
 		"#{authentication_url3(jsessionid)}"
 	]
 
-	page = %x[\
+	@page = %x[\
 		curl -c #{cookies_path()} \
 		-b #{cookies_path()} \
 		-k --ciphers 'DEFAULT:!DH' \
 		"#{authentication_url4(encoded_username)}"
 	]
 
-	page = %x[\
+	@page = %x[\
 		curl -c #{cookies_path()} \
 		-b #{cookies_path()} \
 		-k --ciphers 'DEFAULT:!DH' \
 		"#{authentication_url5()}"
 	]
 
-	page = %x[\
+	@page = %x[\
 		curl -v -c #{cookies_path()} \
 		-b #{cookies_path()} \
 		-k --ciphers 'DEFAULT:!DH' \
@@ -83,44 +85,71 @@ def login username, password
 		2>&1
 	]
 
-	ticket = page.match(/ticket=([^\r]+)/)[1]
+	ticket = @page.match(/ticket=([^\r]+)/)[1]
 
-	page = %x[\
+	@page = %x[\
 		curl -c #{cookies_path()} \
 		-b #{cookies_path()} \
 		-k --ciphers 'DEFAULT:!DH' \
 		"#{authentication_url7(ticket)}"
 	]
 
-	page = %x[\
+	@page = %x[\
 		curl -c #{cookies_path()} \
 		-b #{cookies_path()} \
 		-k --ciphers 'DEFAULT:!DH' \
 		"#{authentication_url8()}"
 	]
 
-	page = %x[\
+	@page = %x[\
 		curl -c #{cookies_path()} \
 		-b #{cookies_path()} \
 		-k --ciphers 'DEFAULT:!DH' \
 		"#{authentication_url9()}"
 	]
 
-	page = %x[\
+	@page = %x[\
 		curl -c #{cookies_path()} \
 		-b #{cookies_path()} \
 		-k --ciphers 'DEFAULT:!DH' \
 		"#{authentication_url10()}"
 	]
 
-	page = %x[\
+	@page = %x[\
 		curl -c #{cookies_path()} \
 		-b #{cookies_path()} \
 		-k --ciphers 'DEFAULT:!DH' \
 		"#{student_page_url()}"
 	]
 
-	save_page(page)
+	save_page()
+end
+
+def scan_classes_table
+	page = Nokogiri::HTML(@page, nil, Encoding::UTF_8.to_s)
+	
+
+	page.css('.descricao').each do |td|
+		puts class_id = td.to_s.match(/value=\"(\d+)/)[1]
+		puts j_id = td.to_s.match(/(j_id\d+)/)[1]
+
+		form_data = "form_acessarTurmaVirtual=form_acessarTurmaVirtual&idTurma=#{class_id}&javax.faces.ViewState=#{j_id}&form_acessarTurmaVirtual%3AturmaVirtual=form_acessarTurmaVirtual%3AturmaVirtual"
+	
+		@page = %x[
+			curl -c #{cookies_path()} -b #{cookies_path()} \
+			-k --ciphers 'DEFAULT:!DH' \
+			-d "#{form_data}" \
+			"#{class_url()}"
+		]
+
+		save_page
+		byebug
+	end
+end
+
+def remove_tmp_files
+	system("rm #{cookies_path()}")
+	system("rm #{page_path()}")
 end
 
 # --------------------------------------------
@@ -136,15 +165,15 @@ end
 
 # PATH FUNCTIONS -----------------------------
 def current_path
-	return path = %x|pwd|.gsub(/\n/, '') + '/'
+	return %x|pwd|.gsub(/\n/, '') + '/'
 end
 
 def page_path
-	return current_path + '/'
+	return current_path + 'page.html'
 end
 
 def cookies_path
-	return path = current_path() + '/cookies'
+	return current_path() + 'cookies'
 end
 
 # --------------------------------------------
@@ -202,14 +231,18 @@ def student_page_url
 	return base_url() + 'portais/discente/discente.jsf'
 end
 
+def class_url
+	return base_url() + 'portais/discente/discente.jsf'
+end
+
 # --------------------------------------------
 
 # SAVING FUNCTIONS ---------------------------
-def save_page page
+def save_page
 	page_path = current_path() + 'page.html'
 
-	file = File.new(page_path, 'w')
-	file.puts page
+	file = File.new(page_path(), 'w')
+	file.puts @page
 	file.close
 end
 
@@ -217,11 +250,17 @@ end
 
 # MAIN ---------------------------------------
 def main username, password
-	system("rm #{cookies_path}")
+	remove_tmp_files()
+
+	@page = nil
 
 	result = result_json()
 
 	login(username, password)
+
+	scan_classes_table()
+
+	remove_tmp_files()
 end
 
 # --------------------------------------------
