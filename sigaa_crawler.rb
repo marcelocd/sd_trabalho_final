@@ -38,7 +38,7 @@ def login username, password
 
 	form_data = "username=#{encoded_username}&password=#{encoded_password}&lt=#{lt}&execution=#{execution}&_eventId=submit"
 
-	log('REQUESTING 1st AUTHENTICATION PAGE')
+	log('REQUESTING 1st AUTHENTICATION PAGE...')
 	@page = %x[
 		curl -v -c #{cookies_path()} -b #{cookies_path()} \
 		-k --ciphers 'DEFAULT:!DH' \
@@ -49,7 +49,7 @@ def login username, password
 
 	ticket = @page.match(/ticket=([^\r]+)/)[1]
 
-	log('REQUESTING 2nd AUTHENTICATION PAGE')
+	log('REQUESTING 2nd AUTHENTICATION PAGE...')
 	@page = %x[\
 		curl -c #{cookies_path()} \
 		-b #{cookies_path()} \
@@ -59,7 +59,7 @@ def login username, password
 
 	jsessionid = File.read("#{cookies_path()}").gsub(/[\s]/, ' ').match(/JSESSIONID ([^ ]+) $/)[1]
 
-	log('REQUESTING 3rd AUTHENTICATION PAGE')
+	log('REQUESTING 3rd AUTHENTICATION PAGE...')
 	@page = %x[\
 		curl -c #{cookies_path()} \
 		-b #{cookies_path()} \
@@ -67,7 +67,7 @@ def login username, password
 		"#{authentication_url3(jsessionid)}"
 	]
 
-	log('REQUESTING 4th AUTHENTICATION PAGE')
+	log('REQUESTING 4th AUTHENTICATION PAGE...')
 	@page = %x[\
 		curl -c #{cookies_path()} \
 		-b #{cookies_path()} \
@@ -75,7 +75,7 @@ def login username, password
 		"#{authentication_url4(encoded_username)}"
 	]
 
-	log('REQUESTING 5th AUTHENTICATION PAGE')
+	log('REQUESTING 5th AUTHENTICATION PAGE...')
 	@page = %x[\
 		curl -c #{cookies_path()} \
 		-b #{cookies_path()} \
@@ -83,7 +83,7 @@ def login username, password
 		"#{authentication_url5()}"
 	]
 
-	log('REQUESTING 6th AUTHENTICATION PAGE')
+	log('REQUESTING 6th AUTHENTICATION PAGE...')
 	@page = %x[\
 		curl -v -c #{cookies_path()} \
 		-b #{cookies_path()} \
@@ -94,7 +94,7 @@ def login username, password
 
 	ticket = @page.match(/ticket=([^\r]+)/)[1]
 
-	log('REQUESTING 7th AUTHENTICATION PAGE')
+	log('REQUESTING 7th AUTHENTICATION PAGE...')
 	@page = %x[\
 		curl -c #{cookies_path()} \
 		-b #{cookies_path()} \
@@ -102,7 +102,7 @@ def login username, password
 		"#{authentication_url7(ticket)}"
 	]
 
-	log('REQUESTING 8th AUTHENTICATION PAGE')
+	log('REQUESTING 8th AUTHENTICATION PAGE...')
 	@page = %x[\
 		curl -c #{cookies_path()} \
 		-b #{cookies_path()} \
@@ -110,7 +110,7 @@ def login username, password
 		"#{authentication_url8()}"
 	]
 
-	log('REQUESTING 9th AUTHENTICATION PAGE')
+	log('REQUESTING 9th AUTHENTICATION PAGE...')
 	@page = %x[\
 		curl -c #{cookies_path()} \
 		-b #{cookies_path()} \
@@ -118,7 +118,7 @@ def login username, password
 		"#{authentication_url9()}"
 	]
 
-	log('REQUESTING 10th AUTHENTICATION PAGE')
+	log('REQUESTING 10th AUTHENTICATION PAGE...')
 	@page = %x[\
 		curl -c #{cookies_path()} \
 		-b #{cookies_path()} \
@@ -126,7 +126,7 @@ def login username, password
 		"#{authentication_url10()}"
 	]
 
-	log('REQUESTING 11th AUTHENTICATION PAGE')
+	log('REQUESTING 11th AUTHENTICATION PAGE...')
 	@page = %x[\
 		curl -c #{cookies_path()} \
 		-b #{cookies_path()} \
@@ -145,7 +145,7 @@ def scan_classes_table
 
 		form_data = "form_acessarTurmaVirtual=form_acessarTurmaVirtual&idTurma=#{class_id}&javax.faces.ViewState=#{j_id}&form_acessarTurmaVirtual%3AturmaVirtual=form_acessarTurmaVirtual%3AturmaVirtual"
 	
-		log('REQUESTING CLASS PAGE')
+		log('REQUESTING CLASS PAGE...')
 		@page = %x[
 			curl -c #{cookies_path()} -b #{cookies_path()} \
 			-k --ciphers 'DEFAULT:!DH' \
@@ -171,13 +171,72 @@ def scan_classes_table
 		
 		form_data = "formMenu=formMenu&#{param_name1}=#{param1}&javax.faces.ViewState=#{view_state}&#{param2}=#{param2}"
 
-		log('REQUESTING PARTICIPANTS PAGE')
+		log('REQUESTING PARTICIPANTS PAGE...')
 		@page = %x[
 			curl -c #{cookies_path()} -b #{cookies_path()} \
 			-k --ciphers 'DEFAULT:!DH' \
 			-d "#{form_data}" \
 			"#{participants_url()}"
 		]
+
+		page2 = Nokogiri::HTML(@page, nil, Encoding::UTF_8.to_s)
+
+		page2.css('.participantes').css('.odd').each do |tr|
+			aux = tr.css('td')[1].text.gsub(/\s{2,}/, ' ')
+
+			if aux.match(/Departamento/)
+				puts 'Type: ' + participant_type = 'professor'
+				puts 'Name: ' + participant_name = aux.match(/^\s([^:]+)/)[1].gsub(/ Departamento/, '')
+				puts 'Departament: ' + participant_department = aux.match(/Departamento: ([^:]+)/)[1].gsub(/ Formação/, '')
+				puts 'Degree: ' + participant_degree = aux.match(/Formação: ([^:]+)/)[1].gsub(/ Usuário/, '')
+				puts 'Username: ' + participant_username = aux.match(/Usuário: ([^\s]+)/)[1]
+				puts 'Email: ' + participant_email = aux.match(/E-Mail: ([^\s]+)/)[1]
+				puts ''
+
+				next
+			end
+						
+			puts 'Type: ' + participant_type = 'aluno' 
+			puts 'Name: ' + participant_name = aux.match(/^\s([^:]+)/)[1].gsub(/ Curso/, '')
+			puts 'Course: ' + participant_course = aux.match(/Curso: ([^:]+)/)[1].gsub(/ Matrícula/, '')
+			puts 'Registration: ' + participant_registration = aux.match(/Matrícula: (\d+)/)[1]
+			puts 'Username: ' + participant_username = aux.match(/Usuário: ([^\s]+)/)[1]
+			puts 'Email: ' + participant_email = aux.match(/E-mail: ([^\s]+)/)[1]
+			puts ''
+			
+			if tr.css('td')[4] != nil
+				aux = tr.css('td')[4].text.gsub(/\s{2,}/, ' ')
+
+				puts 'Name: ' + participant_name = aux.match(/^\s([^:]+)/)[1].gsub(/ Curso/, '')
+				puts 'Course: ' + participant_course = aux.match(/Curso: ([^:]+)/)[1].gsub(/ Matrícula/, '')
+				puts 'Registration: ' + participant_registration = aux.match(/Matrícula: (\d+)/)[1]
+				puts 'Username: ' + participant_username = aux.match(/Usuário: ([^\s]+)/)[1]
+				puts 'Email: ' + participant_email = aux.match(/E-mail: ([^\s]+)/)[1]
+				puts ''
+			end 
+		end
+
+		page2.css('.participantes').css('.even').each do |tr|
+			aux = tr.css('td')[1].text.gsub(/\s{2,}/, ' ')
+			
+			puts 'Name: ' + participant_name = aux.match(/^\s([^:]+)/)[1].gsub(/ Curso/, '')
+			puts 'Course: ' + participant_course = aux.match(/Curso: ([^:]+)/)[1].gsub(/ Matrícula/, '')
+			puts 'Registration: ' + participant_registration = aux.match(/Matrícula: (\d+)/)[1]
+			puts 'Username: ' + participant_username = aux.match(/Usuário: ([^\s]+)/)[1]
+			puts 'Email: ' + participant_email = aux.match(/E-mail: ([^\s]+)/)[1]
+			puts ''
+			
+			if tr.css('td')[4] != nil
+				aux = tr.css('td')[4].text.gsub(/\s{2,}/, ' ')
+
+				puts 'Name: ' + participant_name = aux.match(/^\s([^:]+)/)[1].gsub(/ Curso/, '')
+				puts 'Course: ' + participant_course = aux.match(/Curso: ([^:]+)/)[1].gsub(/ Matrícula/, '')
+				puts 'Registration: ' + participant_registration = aux.match(/Matrícula: (\d+)/)[1]
+				puts 'Username: ' + participant_username = aux.match(/Usuário: ([^\s]+)/)[1]
+				puts 'Email: ' + participant_email = aux.match(/E-mail: ([^\s]+)/)[1]
+				puts ''
+			end 
+		end
 	end
 end
 
