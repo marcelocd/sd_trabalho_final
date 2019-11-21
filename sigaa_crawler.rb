@@ -137,7 +137,7 @@ end
 
 def scan_classes_table
 	page = Nokogiri::HTML(@page, nil, Encoding::UTF_8.to_s)
-	
+
 	page.css('.descricao').each do |td|
 		class_id = td.to_s.match(/value=\"(\d+)/)[1]
 		
@@ -153,20 +153,22 @@ def scan_classes_table
 			"#{class_url()}"
 		]
 
-		log 'SLEEPING...'
-		sleep(5)
-		log 'AWAKEN!'
-
-		byebug
-
 		param_name1 = @page.match(/\(\'(formMenu:j_id_jsp_\d+_\d+)/)[1].gsub(/:/, '%3A')
-		
-		param1 = @page.match(/\'items\':\[\{\'onleave\':\'\',\'onenter\':\'\',\'id\':\'(formMenu:j_id_jsp_\d+_\d+)/)[1]
-		
+
+		param1 = nil
+
+		aux = @page.match(/\'items\':\[\{\'onleave\':\'\',\'onenter\':\'\',\'id\':\'(formMenu:j_id_jsp_\d+_\d+)/)
+
+		if(aux == nil)
+			param1 = @page.match(/\'items\':\[\{\'onleave\':\'\',\'id\':\'(formMenu:j_id_jsp_\d+_\d+)\',\'onenter\':\'\'}/)[1]
+		else
+			param1 = aux[1]
+		end
+
 		view_state = @page.match(/javax\.faces\.ViewState\" value=\"(j_id\d+)/)[1]
 
-		param2 = @page.match(/\{'(formMenu:j_id_jsp_\d+_\d+)\':\'formMenu:j_id_jsp_\d+_\d+\'\},\'\'\)\;\}return false\">\n\t\t\t\t\t<div class=\"itemMenu\">Participantes/)[1].gsub(/:/, '%3A')
-
+		param2 = @page.match(/\{'(formMenu:j_id_jsp_\d+_\d+)\':\'formMenu:j_id_jsp_\d+_\d+\'\},\'\'\)\;\}return false\">\s+<div class=\"itemMenu\">Participantes/)[1].gsub(/:/, '%3A')
+		
 		form_data = "formMenu=formMenu&#{param_name1}=#{param1}&javax.faces.ViewState=#{view_state}&#{param2}=#{param2}"
 
 		log('REQUESTING PARTICIPANTS PAGE')
@@ -176,9 +178,6 @@ def scan_classes_table
 			-d "#{form_data}" \
 			"#{participants_url()}"
 		]
-
-		save_page()
-		byebug
 	end
 end
 
