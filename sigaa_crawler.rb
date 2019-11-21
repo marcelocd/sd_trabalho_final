@@ -2,7 +2,7 @@
 # Universidade Federal de Goiás    *
 # Instituto de Informática         *
 # Creation date:   11/14/19        *
-# Last updated on: 11/19/19        *
+# Last updated on: 11/21/19        *
 # Author: Marcelo Cardoso Dias     *
 # -------------------------------- */
 
@@ -18,6 +18,7 @@ require "erb"
 
 # PROBLEM SOLVING FUNCTIONS ------------------
 def login username, password
+	log('REQUESTING LOGIN PAGE...')
 	@page = %x[\
 		curl -c #{cookies_path()} \
 		-b #{cookies_path()} \
@@ -37,6 +38,7 @@ def login username, password
 
 	form_data = "username=#{encoded_username}&password=#{encoded_password}&lt=#{lt}&execution=#{execution}&_eventId=submit"
 
+	log('REQUESTING 1st AUTHENTICATION PAGE')
 	@page = %x[
 		curl -v -c #{cookies_path()} -b #{cookies_path()} \
 		-k --ciphers 'DEFAULT:!DH' \
@@ -47,6 +49,7 @@ def login username, password
 
 	ticket = @page.match(/ticket=([^\r]+)/)[1]
 
+	log('REQUESTING 2nd AUTHENTICATION PAGE')
 	@page = %x[\
 		curl -c #{cookies_path()} \
 		-b #{cookies_path()} \
@@ -56,6 +59,7 @@ def login username, password
 
 	jsessionid = File.read("#{cookies_path()}").gsub(/[\s]/, ' ').match(/JSESSIONID ([^ ]+) $/)[1]
 
+	log('REQUESTING 3rd AUTHENTICATION PAGE')
 	@page = %x[\
 		curl -c #{cookies_path()} \
 		-b #{cookies_path()} \
@@ -63,6 +67,7 @@ def login username, password
 		"#{authentication_url3(jsessionid)}"
 	]
 
+	log('REQUESTING 4th AUTHENTICATION PAGE')
 	@page = %x[\
 		curl -c #{cookies_path()} \
 		-b #{cookies_path()} \
@@ -70,6 +75,7 @@ def login username, password
 		"#{authentication_url4(encoded_username)}"
 	]
 
+	log('REQUESTING 5th AUTHENTICATION PAGE')
 	@page = %x[\
 		curl -c #{cookies_path()} \
 		-b #{cookies_path()} \
@@ -77,6 +83,7 @@ def login username, password
 		"#{authentication_url5()}"
 	]
 
+	log('REQUESTING 6th AUTHENTICATION PAGE')
 	@page = %x[\
 		curl -v -c #{cookies_path()} \
 		-b #{cookies_path()} \
@@ -87,6 +94,7 @@ def login username, password
 
 	ticket = @page.match(/ticket=([^\r]+)/)[1]
 
+	log('REQUESTING 7th AUTHENTICATION PAGE')
 	@page = %x[\
 		curl -c #{cookies_path()} \
 		-b #{cookies_path()} \
@@ -94,6 +102,7 @@ def login username, password
 		"#{authentication_url7(ticket)}"
 	]
 
+	log('REQUESTING 8th AUTHENTICATION PAGE')
 	@page = %x[\
 		curl -c #{cookies_path()} \
 		-b #{cookies_path()} \
@@ -101,6 +110,7 @@ def login username, password
 		"#{authentication_url8()}"
 	]
 
+	log('REQUESTING 9th AUTHENTICATION PAGE')
 	@page = %x[\
 		curl -c #{cookies_path()} \
 		-b #{cookies_path()} \
@@ -108,6 +118,7 @@ def login username, password
 		"#{authentication_url9()}"
 	]
 
+	log('REQUESTING 10th AUTHENTICATION PAGE')
 	@page = %x[\
 		curl -c #{cookies_path()} \
 		-b #{cookies_path()} \
@@ -115,25 +126,26 @@ def login username, password
 		"#{authentication_url10()}"
 	]
 
+	log('REQUESTING 11th AUTHENTICATION PAGE')
 	@page = %x[\
 		curl -c #{cookies_path()} \
 		-b #{cookies_path()} \
 		-k --ciphers 'DEFAULT:!DH' \
 		"#{student_page_url()}"
 	]
-
-	save_page()
 end
 
 def scan_classes_table
 	page = Nokogiri::HTML(@page, nil, Encoding::UTF_8.to_s)
 	
 	page.css('.descricao').each do |td|
-		puts class_id = td.to_s.match(/value=\"(\d+)/)[1]
-		puts j_id = td.to_s.match(/(j_id\d+)/)[1]
+		class_id = td.to_s.match(/value=\"(\d+)/)[1]
+		
+		j_id = td.to_s.match(/(j_id\d+)/)[1]
 
 		form_data = "form_acessarTurmaVirtual=form_acessarTurmaVirtual&idTurma=#{class_id}&javax.faces.ViewState=#{j_id}&form_acessarTurmaVirtual%3AturmaVirtual=form_acessarTurmaVirtual%3AturmaVirtual"
 	
+		log('REQUESTING CLASS PAGE')
 		@page = %x[
 			curl -c #{cookies_path()} -b #{cookies_path()} \
 			-k --ciphers 'DEFAULT:!DH' \
@@ -141,25 +153,32 @@ def scan_classes_table
 			"#{class_url()}"
 		]
 
+		log 'SLEEPING...'
+		sleep(5)
+		log 'AWAKEN!'
+
 		byebug
 
 		param_name1 = @page.match(/\(\'(formMenu:j_id_jsp_\d+_\d+)/)[1].gsub(/:/, '%3A')
 		
-		param1 = @page.match(/\{'(formMenu:j_id_jsp_\d+_\d+)\':\'formMenu:j_id_jsp_\d+_\d+\'\},\'\'\)\;\}return false\">\n\t\t\t\t\t<div class=\"itemMenu\">Participantes/)[1].gsub(/:/, '%3A')
-		view_state = @page.match(/javax\.faces\.ViewState\" value=\"(j_id_\d+)/)[1]
+		param1 = @page.match(/\'items\':\[\{\'onleave\':\'\',\'onenter\':\'\',\'id\':\'(formMenu:j_id_jsp_\d+_\d+)/)[1]
+		
+		view_state = @page.match(/javax\.faces\.ViewState\" value=\"(j_id\d+)/)[1]
 
-		param2 = @page.match(//)[1]
+		param2 = @page.match(/\{'(formMenu:j_id_jsp_\d+_\d+)\':\'formMenu:j_id_jsp_\d+_\d+\'\},\'\'\)\;\}return false\">\n\t\t\t\t\t<div class=\"itemMenu\">Participantes/)[1].gsub(/:/, '%3A')
 
 		form_data = "formMenu=formMenu&#{param_name1}=#{param1}&javax.faces.ViewState=#{view_state}&#{param2}=#{param2}"
 
-=begin
+		log('REQUESTING PARTICIPANTS PAGE')
 		@page = %x[
 			curl -c #{cookies_path()} -b #{cookies_path()} \
 			-k --ciphers 'DEFAULT:!DH' \
 			-d "#{form_data}" \
 			"#{participants_url()}"
 		]
-=end
+
+		save_page()
+		byebug
 	end
 end
 
@@ -264,6 +283,15 @@ def save_page
 	file = File.new(page_path(), 'w')
 	file.puts @page
 	file.close
+end
+
+# --------------------------------------------
+
+# PRINTING FUNCTIONS -------------------------
+def log msg
+	puts '-' * 99
+	puts msg
+	puts '-' * 99
 end
 
 # --------------------------------------------
