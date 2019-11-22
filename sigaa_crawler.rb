@@ -2,22 +2,20 @@
 # Universidade Federal de Goiás    *
 # Instituto de Informática         *
 # Creation date:   11/14/19        *
-# Last updated on: 11/21/19        *
+# Last updated on: 11/22/19        *
 # Author: Marcelo Cardoso Dias     *
 # -------------------------------- */
 
 # sigaa_crawler.rb
 
 # REQUIREMENTS -------------------------------
-require "mechanize"
 require "nokogiri"
-require "byebug"
 require "erb"
 
 # --------------------------------------------
 
 # PROBLEM SOLVING FUNCTIONS ------------------
-def login username, password
+def login
 	log('REQUESTING LOGIN PAGE...')
 	@page = %x[\
 		curl -c #{cookies_path()} \
@@ -32,9 +30,9 @@ def login username, password
 
 	execution = @page.match(/name=\"execution\" value=\"([^\"]+)/)[1]
 
-	encoded_username = ERB::Util.url_encode(username)
+	encoded_username = ERB::Util.url_encode(@username)
 
-	encoded_password = ERB::Util.url_encode(password)
+	encoded_password = ERB::Util.url_encode(@password)
 
 	form_data = "username=#{encoded_username}&password=#{encoded_password}&lt=#{lt}&execution=#{execution}&_eventId=submit"
 
@@ -193,6 +191,14 @@ def scan_classes_table
 				puts 'Email: ' + participant_email = aux.match(/E-Mail: ([^\s]+)/)[1]
 				puts ''
 
+				@result[:participants] << {
+					type: participant_type,
+					name: participant_name,
+					department: participant_department,
+					degree: participant_degree,
+					username: participant_username,
+					email: participant_email
+				}
 				next
 			end
 						
@@ -203,38 +209,77 @@ def scan_classes_table
 			puts 'Username: ' + participant_username = aux.match(/Usuário: ([^\s]+)/)[1]
 			puts 'Email: ' + participant_email = aux.match(/E-mail: ([^\s]+)/)[1]
 			puts ''
+
+			@result[:participants] << {
+				type: participant_type,
+				name: participant_name,
+				course: participant_course,
+				registration: participant_registration,
+				username: participant_username,
+				email: participant_email
+			}
 			
 			if tr.css('td')[4] != nil
 				aux = tr.css('td')[4].text.gsub(/\s{2,}/, ' ')
 
+				puts 'Type: ' + participant_type = 'aluno' 
 				puts 'Name: ' + participant_name = aux.match(/^\s([^:]+)/)[1].gsub(/ Curso/, '')
 				puts 'Course: ' + participant_course = aux.match(/Curso: ([^:]+)/)[1].gsub(/ Matrícula/, '')
 				puts 'Registration: ' + participant_registration = aux.match(/Matrícula: (\d+)/)[1]
 				puts 'Username: ' + participant_username = aux.match(/Usuário: ([^\s]+)/)[1]
 				puts 'Email: ' + participant_email = aux.match(/E-mail: ([^\s]+)/)[1]
 				puts ''
+
+				@result[:participants] << {
+					type: participant_type,
+					name: participant_name,
+					course: participant_course,
+					registration: participant_registration,
+					username: participant_username,
+					email: participant_email
+				}
 			end 
 		end
 
 		page2.css('.participantes').css('.even').each do |tr|
 			aux = tr.css('td')[1].text.gsub(/\s{2,}/, ' ')
 			
+			puts 'Type: ' + participant_type = 'aluno' 
 			puts 'Name: ' + participant_name = aux.match(/^\s([^:]+)/)[1].gsub(/ Curso/, '')
 			puts 'Course: ' + participant_course = aux.match(/Curso: ([^:]+)/)[1].gsub(/ Matrícula/, '')
 			puts 'Registration: ' + participant_registration = aux.match(/Matrícula: (\d+)/)[1]
 			puts 'Username: ' + participant_username = aux.match(/Usuário: ([^\s]+)/)[1]
 			puts 'Email: ' + participant_email = aux.match(/E-mail: ([^\s]+)/)[1]
 			puts ''
+
+			@result[:participants] << {
+				type: participant_type,
+				name: participant_name,
+				course: participant_course,
+				registration: participant_registration,
+				username: participant_username,
+				email: participant_email
+			}
 			
 			if tr.css('td')[4] != nil
 				aux = tr.css('td')[4].text.gsub(/\s{2,}/, ' ')
 
+				puts 'Type: ' + participant_type = 'aluno' 
 				puts 'Name: ' + participant_name = aux.match(/^\s([^:]+)/)[1].gsub(/ Curso/, '')
 				puts 'Course: ' + participant_course = aux.match(/Curso: ([^:]+)/)[1].gsub(/ Matrícula/, '')
 				puts 'Registration: ' + participant_registration = aux.match(/Matrícula: (\d+)/)[1]
 				puts 'Username: ' + participant_username = aux.match(/Usuário: ([^\s]+)/)[1]
 				puts 'Email: ' + participant_email = aux.match(/E-mail: ([^\s]+)/)[1]
 				puts ''
+
+				@result[:participants] << {
+					type: participant_type,
+					name: participant_name,
+					course: participant_course,
+					registration: participant_registration,
+					username: participant_username,
+					email: participant_email
+				}
 			end 
 		end
 	end
@@ -250,23 +295,8 @@ end
 # JSON FUNCIONS ------------------------------
 def result_json
 	return result_json = {
-		contats: []
+		participants: []
 	}
-end
-
-# --------------------------------------------
-
-# PATH FUNCTIONS -----------------------------
-def current_path
-	return %x|pwd|.gsub(/\n/, '') + '/'
-end
-
-def page_path
-	return current_path + 'page.html'
-end
-
-def cookies_path
-	return current_path() + 'cookies'
 end
 
 # --------------------------------------------
@@ -334,12 +364,35 @@ end
 
 # --------------------------------------------
 
+# PATH FUNCTIONS -----------------------------
+def current_path
+	return %x|pwd|.gsub(/\n/, '') + '/'
+end
+
+def page_path
+	return current_path + 'page.html'
+end
+
+def cookies_path
+	return current_path() + 'cookies'
+end
+
+def result_json_path
+	return current_path() + "contacts/#{@username}.json"
+end
+
+# --------------------------------------------
+
 # SAVING FUNCTIONS ---------------------------
 def save_page
-	page_path = current_path() + 'page.html'
-
 	file = File.new(page_path(), 'w')
 	file.puts @page
+	file.close
+end
+
+def save_result_json
+	file = File.new(result_json_path(), 'w')
+	file.puts @result
 	file.close
 end
 
@@ -356,15 +409,25 @@ end
 
 # MAIN ---------------------------------------
 def main username, password
+	system('mkdir contacts')
+	
 	remove_tmp_files()
+
+	@username = username
+
+	@password = password
+
+	@result = result_json()
 
 	@page = nil
 
-	result = result_json()
-
-	login(username, password)
+	login()
 
 	scan_classes_table()
+
+	@result[:participants].uniq!
+
+	save_result_json()
 
 	remove_tmp_files()
 end
