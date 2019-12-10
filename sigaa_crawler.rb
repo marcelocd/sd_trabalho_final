@@ -11,14 +11,15 @@
 # REQUIREMENTS -------------------------------
 require "nokogiri"
 require "erb"
+require "byebug"
 
 # --------------------------------------------
 
 # PROBLEM SOLVING FUNCTIONS ------------------
 def login
-	log('REQUESTING LOGIN PAGE...')
+	#log('REQUESTING LOGIN PAGE...')
 	@page = %x[\
-		curl -c #{cookies_path()} \
+		curl -s -c #{cookies_path()} \
 		-b #{cookies_path()} \
 		-k --ciphers 'DEFAULT:!DH' \
 		"#{login_url()}"
@@ -36,9 +37,9 @@ def login
 
 	form_data = "username=#{encoded_username}&password=#{encoded_password}&lt=#{lt}&execution=#{execution}&_eventId=submit"
 
-	log('REQUESTING 1st AUTHENTICATION PAGE...')
+	#log('REQUESTING 1st AUTHENTICATION PAGE...')
 	@page = %x[
-		curl -v -c #{cookies_path()} -b #{cookies_path()} \
+		curl -s -v -c #{cookies_path()} -b #{cookies_path()} \
 		-k --ciphers 'DEFAULT:!DH' \
 		-d "#{form_data}" \
 		"#{authentication_url1(jsessionid)}" \
@@ -47,9 +48,9 @@ def login
 
 	ticket = @page.match(/ticket=([^\r]+)/)[1]
 
-	log('REQUESTING 2nd AUTHENTICATION PAGE...')
+	#log('REQUESTING 2nd AUTHENTICATION PAGE...')
 	@page = %x[\
-		curl -c #{cookies_path()} \
+		curl -s -c #{cookies_path()} \
 		-b #{cookies_path()} \
 		-k --ciphers 'DEFAULT:!DH' \
 		"#{authentication_url2(ticket)}"
@@ -57,33 +58,33 @@ def login
 
 	jsessionid = File.read("#{cookies_path()}").gsub(/[\s]/, ' ').match(/JSESSIONID ([^ ]+) $/)[1]
 
-	log('REQUESTING 3rd AUTHENTICATION PAGE...')
+	#log('REQUESTING 3rd AUTHENTICATION PAGE...')
 	@page = %x[\
-		curl -c #{cookies_path()} \
+		curl -s -c #{cookies_path()} \
 		-b #{cookies_path()} \
 		-k --ciphers 'DEFAULT:!DH' \
 		"#{authentication_url3(jsessionid)}"
 	]
 
-	log('REQUESTING 4th AUTHENTICATION PAGE...')
+	#log('REQUESTING 4th AUTHENTICATION PAGE...')
 	@page = %x[\
-		curl -c #{cookies_path()} \
+		curl -s -c #{cookies_path()} \
 		-b #{cookies_path()} \
 		-k --ciphers 'DEFAULT:!DH' \
 		"#{authentication_url4(encoded_username)}"
 	]
 
-	log('REQUESTING 5th AUTHENTICATION PAGE...')
+	#log('REQUESTING 5th AUTHENTICATION PAGE...')
 	@page = %x[\
-		curl -c #{cookies_path()} \
+		curl -s -c #{cookies_path()} \
 		-b #{cookies_path()} \
 		-k --ciphers 'DEFAULT:!DH' \
 		"#{authentication_url5()}"
 	]
 
-	log('REQUESTING 6th AUTHENTICATION PAGE...')
+	#log('REQUESTING 6th AUTHENTICATION PAGE...')
 	@page = %x[\
-		curl -v -c #{cookies_path()} \
+		curl -s -v -c #{cookies_path()} \
 		-b #{cookies_path()} \
 		-k --ciphers 'DEFAULT:!DH' \
 		"#{authentication_url6()}" \
@@ -92,41 +93,41 @@ def login
 
 	ticket = @page.match(/ticket=([^\r]+)/)[1]
 
-	log('REQUESTING 7th AUTHENTICATION PAGE...')
+	#log('REQUESTING 7th AUTHENTICATION PAGE...')
 	@page = %x[\
-		curl -c #{cookies_path()} \
+		curl -s -c #{cookies_path()} \
 		-b #{cookies_path()} \
 		-k --ciphers 'DEFAULT:!DH' \
 		"#{authentication_url7(ticket)}"
 	]
 
-	log('REQUESTING 8th AUTHENTICATION PAGE...')
+	#log('REQUESTING 8th AUTHENTICATION PAGE...')
 	@page = %x[\
-		curl -c #{cookies_path()} \
+		curl -s -c #{cookies_path()} \
 		-b #{cookies_path()} \
 		-k --ciphers 'DEFAULT:!DH' \
 		"#{authentication_url8()}"
 	]
 
-	log('REQUESTING 9th AUTHENTICATION PAGE...')
+	#log('REQUESTING 9th AUTHENTICATION PAGE...')
 	@page = %x[\
-		curl -c #{cookies_path()} \
+		curl -s -c #{cookies_path()} \
 		-b #{cookies_path()} \
 		-k --ciphers 'DEFAULT:!DH' \
 		"#{authentication_url9()}"
 	]
 
-	log('REQUESTING 10th AUTHENTICATION PAGE...')
+	#log('REQUESTING 10th AUTHENTICATION PAGE...')
 	@page = %x[\
-		curl -c #{cookies_path()} \
+		curl -s -c #{cookies_path()} \
 		-b #{cookies_path()} \
 		-k --ciphers 'DEFAULT:!DH' \
 		"#{authentication_url10()}"
 	]
 
-	log('REQUESTING 11th AUTHENTICATION PAGE...')
+	#log('REQUESTING 11th AUTHENTICATION PAGE...')
 	@page = %x[\
-		curl -c #{cookies_path()} \
+		curl -s -c #{cookies_path()} \
 		-b #{cookies_path()} \
 		-k --ciphers 'DEFAULT:!DH' \
 		"#{student_page_url()}"
@@ -143,9 +144,9 @@ def scan_classes_table
 
 		form_data = "form_acessarTurmaVirtual=form_acessarTurmaVirtual&idTurma=#{class_id}&javax.faces.ViewState=#{j_id}&form_acessarTurmaVirtual%3AturmaVirtual=form_acessarTurmaVirtual%3AturmaVirtual"
 	
-		log('REQUESTING CLASS PAGE...')
+		#log('REQUESTING CLASS PAGE...')
 		@page = %x[
-			curl -c #{cookies_path()} -b #{cookies_path()} \
+			curl -s -c #{cookies_path()} -b #{cookies_path()} \
 			-k --ciphers 'DEFAULT:!DH' \
 			-d "#{form_data}" \
 			"#{class_url()}"
@@ -169,9 +170,9 @@ def scan_classes_table
 		
 		form_data = "formMenu=formMenu&#{param_name1}=#{param1}&javax.faces.ViewState=#{view_state}&#{param2}=#{param2}"
 
-		log('REQUESTING PARTICIPANTS PAGE...')
+		#log('REQUESTING PARTICIPANTS PAGE...')
 		@page = %x[
-			curl -c #{cookies_path()} -b #{cookies_path()} \
+			curl -s -c #{cookies_path()} -b #{cookies_path()} \
 			-k --ciphers 'DEFAULT:!DH' \
 			-d "#{form_data}" \
 			"#{participants_url()}"
@@ -183,14 +184,13 @@ def scan_classes_table
 			aux = tr.css('td')[1].text.gsub(/\s{2,}/, ' ')
 
 			if aux.match(/Departamento/)
-				puts 'Type: ' + participant_type = 'professor'
-				puts 'Name: ' + participant_name = aux.match(/^\s([^:]+)/)[1].gsub(/ Departamento/, '')
-				puts 'Departament: ' + participant_department = aux.match(/Departamento: ([^:]+)/)[1].gsub(/ Formação/, '')
-				puts 'Degree: ' + participant_degree = aux.match(/Formação: ([^:]+)/)[1].gsub(/ Usuário/, '')
-				puts 'Username: ' + participant_username = aux.match(/Usuário: ([^\s]+)/)[1]
-				puts 'Email: ' + participant_email = aux.match(/E-Mail: ([^\s]+)/)[1]
-				puts ''
-
+				participant_type = 'professor'
+				participant_name = aux.match(/^\s([^:]+)/)[1].gsub(/ Departamento/, '')
+				participant_department = aux.match(/Departamento: ([^:]+)/)[1].gsub(/ Formação/, '')
+				participant_degree = aux.match(/Formação: ([^:]+)/)[1].gsub(/ Usuário/, '')
+				participant_username = aux.match(/Usuário: ([^\s]+)/)[1]
+				participant_email = aux.match(/E-Mail: ([^\s]+)/)[1]
+				
 				@result[:participants] << {
 					type: participant_type,
 					name: participant_name,
@@ -199,16 +199,16 @@ def scan_classes_table
 					username: participant_username,
 					email: participant_email
 				}
+
 				next
 			end
 						
-			puts 'Type: ' + participant_type = 'aluno' 
-			puts 'Name: ' + participant_name = aux.match(/^\s([^:]+)/)[1].gsub(/ Curso/, '')
-			puts 'Course: ' + participant_course = aux.match(/Curso: ([^:]+)/)[1].gsub(/ Matrícula/, '')
-			puts 'Registration: ' + participant_registration = aux.match(/Matrícula: (\d+)/)[1]
-			puts 'Username: ' + participant_username = aux.match(/Usuário: ([^\s]+)/)[1]
-			puts 'Email: ' + participant_email = aux.match(/E-mail: ([^\s]+)/)[1]
-			puts ''
+			participant_type = 'aluno' 
+			participant_name = aux.match(/^\s([^:]+)/)[1].gsub(/ Curso/, '')
+			participant_course = aux.match(/Curso: ([^:]+)/)[1].gsub(/ Matrícula/, '')
+			participant_registration = aux.match(/Matrícula: (\d+)/)[1]
+			participant_username = aux.match(/Usuário: ([^\s]+)/)[1]
+			participant_email = aux.match(/E-mail: ([^\s]+)/)[1]	
 
 			@result[:participants] << {
 				type: participant_type,
@@ -222,13 +222,12 @@ def scan_classes_table
 			if tr.css('td')[4] != nil
 				aux = tr.css('td')[4].text.gsub(/\s{2,}/, ' ')
 
-				puts 'Type: ' + participant_type = 'aluno' 
-				puts 'Name: ' + participant_name = aux.match(/^\s([^:]+)/)[1].gsub(/ Curso/, '')
-				puts 'Course: ' + participant_course = aux.match(/Curso: ([^:]+)/)[1].gsub(/ Matrícula/, '')
-				puts 'Registration: ' + participant_registration = aux.match(/Matrícula: (\d+)/)[1]
-				puts 'Username: ' + participant_username = aux.match(/Usuário: ([^\s]+)/)[1]
-				puts 'Email: ' + participant_email = aux.match(/E-mail: ([^\s]+)/)[1]
-				puts ''
+				participant_type = 'aluno' 
+				participant_name = aux.match(/^\s([^:]+)/)[1].gsub(/ Curso/, '')
+				participant_course = aux.match(/Curso: ([^:]+)/)[1].gsub(/ Matrícula/, '')
+				participant_registration = aux.match(/Matrícula: (\d+)/)[1]
+				participant_username = aux.match(/Usuário: ([^\s]+)/)[1]
+				participant_email = aux.match(/E-mail: ([^\s]+)/)[1]		
 
 				@result[:participants] << {
 					type: participant_type,
@@ -244,13 +243,12 @@ def scan_classes_table
 		page2.css('.participantes').css('.even').each do |tr|
 			aux = tr.css('td')[1].text.gsub(/\s{2,}/, ' ')
 			
-			puts 'Type: ' + participant_type = 'aluno' 
-			puts 'Name: ' + participant_name = aux.match(/^\s([^:]+)/)[1].gsub(/ Curso/, '')
-			puts 'Course: ' + participant_course = aux.match(/Curso: ([^:]+)/)[1].gsub(/ Matrícula/, '')
-			puts 'Registration: ' + participant_registration = aux.match(/Matrícula: (\d+)/)[1]
-			puts 'Username: ' + participant_username = aux.match(/Usuário: ([^\s]+)/)[1]
-			puts 'Email: ' + participant_email = aux.match(/E-mail: ([^\s]+)/)[1]
-			puts ''
+			participant_type = 'aluno' 
+			participant_name = aux.match(/^\s([^:]+)/)[1].gsub(/ Curso/, '')
+			participant_course = aux.match(/Curso: ([^:]+)/)[1].gsub(/ Matrícula/, '')
+			participant_registration = aux.match(/Matrícula: (\d+)/)[1]
+			participant_username = aux.match(/Usuário: ([^\s]+)/)[1]
+			participant_email = aux.match(/E-mail: ([^\s]+)/)[1]
 
 			@result[:participants] << {
 				type: participant_type,
@@ -264,14 +262,13 @@ def scan_classes_table
 			if tr.css('td')[4] != nil
 				aux = tr.css('td')[4].text.gsub(/\s{2,}/, ' ')
 
-				puts 'Type: ' + participant_type = 'aluno' 
-				puts 'Name: ' + participant_name = aux.match(/^\s([^:]+)/)[1].gsub(/ Curso/, '')
-				puts 'Course: ' + participant_course = aux.match(/Curso: ([^:]+)/)[1].gsub(/ Matrícula/, '')
-				puts 'Registration: ' + participant_registration = aux.match(/Matrícula: (\d+)/)[1]
-				puts 'Username: ' + participant_username = aux.match(/Usuário: ([^\s]+)/)[1]
-				puts 'Email: ' + participant_email = aux.match(/E-mail: ([^\s]+)/)[1]
-				puts ''
-
+				participant_type = 'aluno' 
+				participant_name = aux.match(/^\s([^:]+)/)[1].gsub(/ Curso/, '')
+				participant_course = aux.match(/Curso: ([^:]+)/)[1].gsub(/ Matrícula/, '')
+				participant_registration = aux.match(/Matrícula: (\d+)/)[1]
+				participant_username = aux.match(/Usuário: ([^\s]+)/)[1]
+				participant_email = aux.match(/E-mail: ([^\s]+)/)[1]
+				
 				@result[:participants] << {
 					type: participant_type,
 					name: participant_name,
@@ -286,8 +283,19 @@ def scan_classes_table
 end
 
 def remove_tmp_files
-	system("rm #{cookies_path()}")
-	system("rm #{page_path()}")
+	cmd = "if test -f '#{cookies_path()}' ; then
+		    rm #{cookies_path()}
+		fi"
+
+	system(cmd)
+end
+
+def create_contacts_dir
+	cmd = "if ! test -d '#{contacts_path()}' ; then
+		    mkdir contacts
+		fi"
+
+	system(cmd)
 end
 
 # --------------------------------------------
@@ -369,12 +377,12 @@ def current_path
 	return %x|pwd|.gsub(/\n/, '') + '/'
 end
 
-def page_path
-	return current_path + 'page.html'
-end
-
 def cookies_path
 	return current_path() + 'cookies'
+end
+
+def contacts_path
+	return current_path() + 'contacts/'
 end
 
 def result_json_path
@@ -384,12 +392,6 @@ end
 # --------------------------------------------
 
 # SAVING FUNCTIONS ---------------------------
-def save_page
-	file = File.new(page_path(), 'w')
-	file.puts @page
-	file.close
-end
-
 def save_result_json
 	file = File.new(result_json_path(), 'w')
 	file.puts @result
@@ -409,8 +411,8 @@ end
 
 # MAIN ---------------------------------------
 def main username, password
-	system('mkdir contacts')
-	
+	create_contacts_dir()
+
 	remove_tmp_files()
 
 	@username = username
@@ -430,6 +432,8 @@ def main username, password
 	save_result_json()
 
 	remove_tmp_files()
+
+	puts @result
 end
 
 # --------------------------------------------
